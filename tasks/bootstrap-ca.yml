@@ -1,0 +1,70 @@
+- name: Check if CA exists on any nodes
+  run_once: true
+  ansible.builtin.stat:
+    path: "/etc/etcd/pki/{{ _etcd_ca_type }}-ca.key"
+  register: _etcd_ca_key_stat
+  loop: "{{ play_hosts }}"
+
+- name: Pick node from pre-existing CA
+  ansible.builtin.set_fact:
+    _etcd_ca_bootstrap_node: "{{ _etcd_ca_key_stat.results | selectattr('stat.exists', 'equalto', true) | map(attribute='item') | first }}"
+  when: _etcd_ca_key_stat.results | selectattr('stat.exists', 'equalto', true) | length > 0
+
+- name: Select first node to initialize CA
+  ansible.builtin.set_fact:
+    _etcd_ca_bootstrap_node: "{{ play_hosts | first }}"
+  when: _etcd_ca_key_stat.results | selectattr('stat.exists', 'equalto', true) | length == 0
+
+- name: Create private key for CA
+  delegate_to: "{{ _etcd_ca_bootstrap_node }}"
+  run_once: true
+  community.crypto.openssl_privatekey:
+    path: "/etc/etcd/pki/{{ _etcd_ca_type }}-ca.key"
+
+- name: Create certificate signing request (CSR) for CA certificate
+  changed_when: false
+  delegate_to: "{{ _etcd_ca_bootstrap_node }}"
+  run_once: true
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: "/etc/etcd/pki/{{ _etcd_ca_type }}-ca.key"
+    common_name: etcd
+    use_common_name_for_san: false
+    basic_constraints:
+      - 'CA:TRUE'
+    basic_constraints_critical: yes
+    key_usage:
+      - keyCertSign
+      - keyEncipherment
+    key_usage_critical: true
+    extended_key_usage:
+      - clientAuth
+      - serverAuth
+    extended_key_usage_critical: true
+  register: _etcd_ca_csr
+
+- name: Create self-signed CA certificate from CSR
+  delegate_to: "{{ _etcd_ca_bootstrap_node }}"
+  run_once: true
+  community.crypto.x509_certificate:
+    path: "/etc/etcd/pki/{{ _etcd_ca_type }}-ca.crt"
+    csr_content: "{{ _etcd_ca_csr.csr }}"
+    privatekey_path: "/etc/etcd/pki/{{ _etcd_ca_type }}-ca.key"
+    provider: selfsigned
+
+- name: Copy self-signed CA from generating node
+  delegate_to: "{{ _etcd_ca_bootstrap_node }}"
+  run_once: true
+  ansible.builtin.slurp:
+    src: "{{ item }}"
+  loop:
+    - "/etc/etcd/pki/{{ _etcd_ca_type }}-ca.crt"
+    - "/etc/etcd/pki/{{ _etcd_ca_type }}-ca.key"
+  register: _etcd_ca_slurp
+
+- name: Copy self-signed CA to other nodes
+  ansible.builtin.copy:
+    content: "{{ item.content | b64decode }}"
+    dest: "{{ item.source }}"
+  loop: "{{ _etcd_ca_slurp.results }}"
+  loop_control:
+    label: "{{ item.source }}"

@@ -1,0 +1,104 @@
+- name: Determine the current installed version
+  ansible.builtin.command: etcd --version
+  changed_when: false
+  failed_when: false
+  register: _etcd_version
+
+- name: Install "etcd" binary
+  when: _etcd_version.rc == 2 or etcd_version not in _etcd_version.stdout 
+  block:
+    - name: Create temporary file
+      ansible.builtin.tempfile:
+        state: file
+        suffix: .tar.gz
+      register: _tempfile
+    
+    - name: Download "etcd" tarball
+      ansible.builtin.get_url:
+        url: "https://github.com/etcd-io/etcd/releases/download/v{{ etcd_version }}/etcd-v{{ etcd_version }}-linux-{{ etcd_architecture }}.tar.gz"
+        dest: "{{ _tempfile.path }}"
+        checksum: "sha256:https://github.com/coreos/etcd/releases/download/v{{ etcd_version }}/SHA256SUMS"
+        mode: 0755
+
+    - name: Extract "etcd" tarball
+      ansible.builtin.unarchive:
+        src: "{{ _tempfile.path }}"
+        dest: /usr/local/bin/
+        remote_src: true
+        owner: root
+        group: root
+        extra_opts:
+          - --strip-components=1
+        include:
+          - etcd-v{{ etcd_version }}-linux-{{ etcd_architecture }}/etcd
+          - etcd-v{{ etcd_version }}-linux-{{ etcd_architecture }}/etcdctl
+          - etcd-v{{ etcd_version }}-linux-{{ etcd_architecture }}/etcdutl
+
+    - name: Clean-up archive
+      ansible.builtin.file:
+        path: "{{ _tempfile.path }}"
+        state: absent
+
+- name: Create folders for "etcd" PKI
+  ansible.builtin.file:
+    path: /etc/etcd/pki
+    state: directory
+
+- name: Bootstrap CA for peers
+  ansible.builtin.include_tasks: bootstrap-ca.yml
+  vars:
+    _etcd_ca_type: peer
+
+- name: Bootstrap CA for clients
+  ansible.builtin.include_tasks: bootstrap-ca.yml
+  vars:
+    _etcd_ca_type: client
+
+- name: Create user
+  ansible.builtin.user:
+    name: etcd
+    comment: etcd user
+    home: /var/lib/etcd
+    create_home: false
+
+- name: Lock down database folder
+  ansible.builtin.file:
+    state: directory
+    path: /var/lib/etcd
+    owner: etcd
+    mode: 0700
+
+- name: Create certificate for peer
+  ansible.builtin.include_tasks: create-cert.yml
+  vars:
+    _etcd_ca_type: peer
+
+- name: Create certificate for client
+  ansible.builtin.include_tasks: create-cert.yml
+  vars:
+    _etcd_ca_type: client
+
+- name: Install service file
+  ansible.builtin.template:
+    src: etcd.service.j2
+    dest: /etc/systemd/system/etcd.service
+  register: _etcd_service
+
+- name: Reload systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+  when: _etcd_service.changed
+
+- name: Ensure service starts on boot
+  ansible.builtin.systemd:
+    name: etcd
+    state: started
+    enabled: true
+
+- name: Restart service
+  throttle: 1
+  ansible.builtin.systemd:
+    name: etcd
+    state: restarted
+  when: _etcd_service.changed
+

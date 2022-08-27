@@ -1,0 +1,17 @@
+---
+- hosts: all
+  gather_facts: false
+  tasks:
+  - name: Grab member list
+    ansible.builtin.shell:
+      etcdctl member list
+        --endpoints=https://127.0.0.1:2379
+        --cacert=/etc/etcd/pki/client-ca.crt
+        --cert=/etc/etcd/pki/client.crt
+        --key=/etc/etcd/pki/client.key
+    register: _etcd_member_list
+
+  - name: Check if all hosts exist in member list
+    ansible.builtin.assert:
+      that: item in _etcd_member_list.stdout
+    loop: "{{ play_hosts }}"

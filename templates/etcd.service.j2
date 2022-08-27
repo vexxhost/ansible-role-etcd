@@ -1,0 +1,28 @@
+[Unit]
+Description=etcd key-value store
+Documentation=https://github.com/etcd-io/etcd
+After=network-online.target local-fs.target remote-fs.target time-sync.target
+Wants=network-online.target local-fs.target remote-fs.target time-sync.target
+
+[Service]
+User=etcd
+Type=notify
+Restart=always
+RestartSec=10s
+LimitNOFILE=40000
+Environment=ETCD_DATA_DIR=/var/lib/etcd
+ExecStart=/usr/local/bin/etcd \
+  --name "{{ etcd_name }}" \
+  --initial-advertise-peer-urls https://{{ etcd_peer_ip }}:2380 \
+  --listen-peer-urls https://{{ etcd_peer_ip }}:2380 \
+  --listen-client-urls https://{{ etcd_peer_ip }}:2379,https://127.0.0.1:2379 \
+  --advertise-client-urls https://{{ etcd_peer_ip }}:2379 \
+  --initial-cluster {% for host in play_hosts %}{{ hostvars[host].get('etcd_name', hostvars[host]['inventory_hostname_short']) }}=https://{{ hostvars[host].get('etcd_peer_ip', hostvars[host]['ansible_default_ipv4']['address']) }}:2380{%- if not loop.last %},{% endif %}{% endfor %} \
+  --initial-cluster-state new \
+  --client-cert-auth --trusted-ca-file=/etc/etcd/pki/client-ca.crt \
+  --cert-file=/etc/etcd/pki/client.crt --key-file=/etc/etcd/pki/client.key \
+  --peer-client-cert-auth --peer-trusted-ca-file=/etc/etcd/pki/peer-ca.crt \
+  --peer-cert-file=/etc/etcd/pki/peer.crt --peer-key-file=/etc/etcd/pki/peer.key
+
+[Install]
+WantedBy=multi-user.target

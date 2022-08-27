@@ -1,0 +1,22 @@
+---
+dependency:
+  name: galaxy
+driver:
+  name: docker
+platforms:
+  - name: etcd-1
+    image: docker.io/ubuntu:focal
+    dockerfile: Dockerfile
+    override_command: false
+  - name: etcd-2
+    image: docker.io/ubuntu:focal
+    dockerfile: Dockerfile
+    override_command: false
+  - name: etcd-3
+    image: docker.io/ubuntu:focal
+    dockerfile: Dockerfile
+    override_command: false
+provisioner:
+  name: ansible
+verifier:
+  name: ansible

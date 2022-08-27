@@ -1,0 +1,14 @@
+# Version to install
+#
+# NOTE(mnaser): There is no CI for upgrades at the moment, so be careful when
+#               changing this.
+etcd_version: 3.5.4
+
+# Architecture to use (automatically detected using Ansible facts)
+etcd_architecture: "{{ etcd_goarch_mapping[ansible_architecture] }}"
+
+# Node name
+etcd_name: "{{ inventory_hostname_short }}"
+
+# Peer IP address
+etcd_peer_ip: "{{ ansible_default_ipv4['address'] }}"

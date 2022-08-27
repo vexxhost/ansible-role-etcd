@@ -1,0 +1,25 @@
+- name: Generate private key for "etcd" {{ _etcd_ca_type }}
+  community.crypto.openssl_privatekey:
+    path: "/etc/etcd/pki/{{ _etcd_ca_type }}.key"
+    owner: etcd
+
+- name: Create certificate signing request (CSR) for "etcd" {{ _etcd_ca_type }}
+  changed_when: false
+  community.crypto.openssl_csr_pipe:
+    privatekey_path: /etc/etcd/pki/{{ _etcd_ca_type }}.key
+    subject_alt_name:
+      - "DNS:localhost"
+      - "IP:127.0.0.1"
+      - "IP:{{ etcd_peer_ip }}"
+  register: _etcd_csr
+
+- name: Sign certificate with certificate authority
+  community.crypto.x509_certificate:
+    path: /etc/etcd/pki/{{ _etcd_ca_type }}.crt
+    owner: etcd
+    csr_content: "{{ _etcd_csr.csr }}"
+    provider: ownca
+    ownca_path: /etc/etcd/pki/{{ _etcd_ca_type }}-ca.crt
+    ownca_privatekey_path: /etc/etcd/pki/{{ _etcd_ca_type }}-ca.key
+    ownca_not_after: +365d
+    ownca_not_before: "-1d"
