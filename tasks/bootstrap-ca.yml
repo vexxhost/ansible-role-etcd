@@ -20,6 +20,9 @@
   run_once: true
   community.crypto.openssl_privatekey:
     path: "/etc/etcd/pki/{{ _etcd_ca_type }}-ca.key"
+    owner: root
+    group: root
+    mode: 0755
 
 - name: Create certificate signing request (CSR) for CA certificate
   changed_when: false
@@ -31,7 +34,7 @@
     use_common_name_for_san: false
     basic_constraints:
       - 'CA:TRUE'
-    basic_constraints_critical: yes
+    basic_constraints_critical: true
     key_usage:
       - keyCertSign
       - keyEncipherment
@@ -65,6 +68,9 @@
   ansible.builtin.copy:
     content: "{{ item.content | b64decode }}"
     dest: "{{ item.source }}"
+    owner: root
+    group: root
+    mode: 0755
   loop: "{{ _etcd_ca_slurp.results }}"
   loop_control:
     label: "{{ item.source }}"

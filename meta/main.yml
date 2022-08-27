@@ -1,0 +1,19 @@
+galaxy_info:
+  namespace: vexxhost
+  role_name: etcd
+  description: Ansible role for installing "etcd"
+
+  author: Mohammed Naser
+  company: VEXXHOST, Inc.
+
+  license: GPLv3
+  min_ansible_version: "2.12"
+  issue_tracker_url: https://github.com/vexxhost/ansible-role-etcd/issues
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+
+  galaxy_tags:
+    - etcd
