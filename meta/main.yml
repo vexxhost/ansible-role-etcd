@@ -1,4 +1,5 @@
 galaxy_info:
+  namespace: vexxhost
   role_name: etcd
   description: Ansible role for installing "etcd"
 
