@@ -1,12 +1,8 @@
 name: release
 on:
-  workflow_run:
-    branches:
-      - main
-    workflows:
-      - test
-    types: 
-      - completed
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   publish:
