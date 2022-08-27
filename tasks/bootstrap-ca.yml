@@ -67,7 +67,7 @@
     dest: "{{ item.source }}"
     owner: root
     group: root
-    mode: 0600
+    mode: 0755
   loop: "{{ _etcd_ca_slurp.results }}"
   loop_control:
     label: "{{ item.source }}"

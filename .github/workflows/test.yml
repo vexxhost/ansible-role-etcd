@@ -20,4 +20,5 @@ jobs:
       - uses: actions/checkout@v3.0.2
       - uses: gofrolist/molecule-action@v2.2.38
         env:
-          ANSIBLE_FORCE_COLOR: '1'
+          ANSIBLE_FORCE_COLOR: "1"
+          ANSIBLE_ASYNC_DIR: "/tmp/.ansible_async"
