@@ -45,7 +45,7 @@
     state: directory
     owner: root
     group: root
-    mode: 0644
+    mode: 0655
 
 - name: Bootstrap CA for peers
   ansible.builtin.include_tasks: bootstrap-ca.yml
