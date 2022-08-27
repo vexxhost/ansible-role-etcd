@@ -5,14 +5,14 @@
   register: _etcd_version
 
 - name: Install "etcd" binary
-  when: _etcd_version.rc == 2 or etcd_version not in _etcd_version.stdout 
+  when: _etcd_version.rc == 2 or etcd_version not in _etcd_version.stdout
   block:
     - name: Create temporary file
       ansible.builtin.tempfile:
         state: file
         suffix: .tar.gz
       register: _tempfile
-    
+
     - name: Download "etcd" tarball
       ansible.builtin.get_url:
         url: "https://github.com/etcd-io/etcd/releases/download/v{{ etcd_version }}/etcd-v{{ etcd_version }}-linux-{{ etcd_architecture }}.tar.gz"
@@ -101,4 +101,3 @@
     name: etcd
     state: restarted
   when: _etcd_service.changed
-
