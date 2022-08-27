@@ -43,6 +43,9 @@
   ansible.builtin.file:
     path: /etc/etcd/pki
     state: directory
+    owner: root
+    group: root
+    mode: 0644
 
 - name: Bootstrap CA for peers
   ansible.builtin.include_tasks: bootstrap-ca.yml
@@ -82,22 +85,15 @@
   ansible.builtin.template:
     src: etcd.service.j2
     dest: /etc/systemd/system/etcd.service
-  register: _etcd_service
-
-- name: Reload systemd
-  ansible.builtin.systemd:
-    daemon_reload: true
-  when: _etcd_service.changed
+    owner: root
+    group: root
+    mode: 0600
+  notify:
+    - Reload systemd daemon
+    - Restart service
 
 - name: Ensure service starts on boot
   ansible.builtin.systemd:
     name: etcd
     state: started
     enabled: true
-
-- name: Restart service
-  throttle: 1
-  ansible.builtin.systemd:
-    name: etcd
-    state: restarted
-  when: _etcd_service.changed
