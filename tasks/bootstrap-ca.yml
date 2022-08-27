@@ -20,6 +20,9 @@
   run_once: true
   community.crypto.openssl_privatekey:
     path: "/etc/etcd/pki/{{ _etcd_ca_type }}-ca.key"
+    owner: root
+    group: root
+    mode: 0755
 
 - name: Create certificate signing request (CSR) for CA certificate
   changed_when: false
