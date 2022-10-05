@@ -9,7 +9,7 @@ jobs:
   ansible-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v3.1.0
       - uses: ansible-community/ansible-lint-action@v6.5.2
         with:
           path: "."
@@ -17,7 +17,7 @@ jobs:
   molecule:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v3.1.0
       - uses: gofrolist/molecule-action@v2.2.41
         env:
           ANSIBLE_FORCE_COLOR: "1"
