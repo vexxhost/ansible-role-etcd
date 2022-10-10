@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3.1.0
-      - uses: gofrolist/molecule-action@v2.2.43
+      - uses: gofrolist/molecule-action@v2.2.44
         env:
           ANSIBLE_FORCE_COLOR: "1"
           ANSIBLE_ASYNC_DIR: "/tmp/.ansible_async"
